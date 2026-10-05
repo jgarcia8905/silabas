@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Completa la Sílaba</title>
+<meta name="theme-color" content="#fff1cf">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sílabas">
+<link rel="apple-touch-icon" href="images/icon-192.png">
+<link rel="icon" href="images/icon-192.png">
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --bg: #fff1cf;
+    --accent: #2c4a6b;
+    --accent-light: #6ec3f4;
+    --correct: #4caf79;
+    --wrong: #ff6b6b;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  header {
+    flex: 0 0 auto;
+    text-align: center;
+    padding: 8px 10px 6px;
+  }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+  }
+  .header-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+  #score {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.95rem;
+    background: white;
+    padding: 7px 14px;
+    border-radius: 999px;
+    box-shadow: 0 3px 8px rgba(30, 60, 100, 0.2);
+  }
+  #new-game, #sound-toggle {
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 7px 18px;
+    border-radius: 999px;
+    box-shadow: 0 3px 8px rgba(30, 60, 100, 0.3);
+    cursor: pointer;
+  }
+  #sound-toggle {
+    background: var(--accent-light);
+    padding: 7px 12px;
+  }
+  #sound-toggle.muted {
+    background: #9aa7b5;
+  }
+  #new-game:active, #sound-toggle:active {
+    transform: scale(0.95);
+  }
+
+  main {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 0;
+    padding: 6px 14px;
+  }
+
+  #emoji-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #emoji {
+    font-size: clamp(3.2rem, 16vw, 6rem);
+    line-height: 1;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+  }
+  #replay-btn {
+    border: none;
+    background: white;
+    color: var(--accent);
+    font-size: 1.3rem;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    box-shadow: 0 3px 8px rgba(30, 60, 100, 0.25);
+    cursor: pointer;
+  }
+  #replay-btn:active {
+    transform: scale(0.92);
+  }
+
+  #word-box {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .syl-box {
+    min-width: 56px;
+    height: 56px;
+    padding: 0 10px;
+    background: white;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.2rem, 6vw, 1.8rem);
+    font-weight: 800;
+    color: var(--accent);
+    text-transform: uppercase;
+    box-shadow: 0 3px 8px rgba(30, 60, 100, 0.2);
+  }
+  .syl-box.blank {
+    background: repeating-linear-gradient(45deg, #fff, #fff 6px, #ffe6b0 6px, #ffe6b0 12px);
+    border: 3px dashed var(--accent-light);
+    color: transparent;
+  }
+  .syl-box.filled {
+    animation: pop 0.4s ease;
+    background: #e3f7ec;
+    border: 3px solid var(--correct);
+  }
+  @keyframes pop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+
+  #toast {
+    min-height: 1.4rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--correct);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  #toast.show {
+    opacity: 1;
+  }
+
+  #options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    max-width: 480px;
+  }
+  .option-btn {
+    border: none;
+    background: white;
+    color: var(--accent);
+    font-size: clamp(1.1rem, 5.5vw, 1.5rem);
+    font-weight: 800;
+    text-transform: uppercase;
+    min-width: 72px;
+    padding: 14px 10px;
+    border-radius: 16px;
+    box-shadow: 0 4px 10px rgba(30, 60, 100, 0.25);
+    cursor: pointer;
+  }
+  .option-btn:active {
+    transform: scale(0.94);
+  }
+  .option-btn.correct {
+    background: var(--correct);
+    color: white;
+  }
+  .option-btn.wrong {
+    background: var(--wrong);
+    color: white;
+    animation: shake 0.4s ease;
+  }
+  .option-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Completa la Sílaba 🧩</h1>
+  <div class="header-buttons">
+    <span id="score">⭐ 0</span>
+    <button id="new-game">Nueva palabra</button>
+    <button id="sound-toggle">🔊</button>
+  </div>
+</header>
+
+<main>
+  <div id="emoji-wrap">
+    <div id="emoji">🏠</div>
+    <button id="replay-btn" title="Escuchar">🔊</button>
+  </div>
+  <div id="word-box"></div>
+  <div id="toast"></div>
+  <div id="options"></div>
+</main>
+
+<script>
+  const WORDS = [
+    { word: "casa", syl: ["ca", "sa"], emoji: "🏠" },
+    { word: "mesa", syl: ["me", "sa"], emoji: "🪑" },
+    { word: "gato", syl: ["ga", "to"], emoji: "🐱" },
+    { word: "pato", syl: ["pa", "to"], emoji: "🦆" },
+    { word: "luna", syl: ["lu", "na"], emoji: "🌙" },
+    { word: "sofá", syl: ["so", "fá"], emoji: "🛋️" },
+    { word: "coche", syl: ["co", "che"], emoji: "🚗" },
+    { word: "libro", syl: ["li", "bro"], emoji: "📖" },
+    { word: "perro", syl: ["pe", "rro"], emoji: "🐶" },
+    { word: "pollo", syl: ["po", "llo"], emoji: "🐔" },
+    { word: "globo", syl: ["glo", "bo"], emoji: "🎈" },
+    { word: "ratón", syl: ["ra", "tón"], emoji: "🐭" },
+    { word: "pelota", syl: ["pe", "lo", "ta"], emoji: "⚽" },
+    { word: "zapato", syl: ["za", "pa", "to"], emoji: "👟" },
+    { word: "manzana", syl: ["man", "za", "na"], emoji: "🍎" },
+    { word: "camisa", syl: ["ca", "mi", "sa"], emoji: "👕" },
+    { word: "tomate", syl: ["to", "ma", "te"], emoji: "🍅" },
+    { word: "helado", syl: ["he", "la", "do"], emoji: "🍦" },
+    { word: "conejo", syl: ["co", "ne", "jo"], emoji: "🐰" },
+    { word: "tortuga", syl: ["tor", "tu", "ga"], emoji: "🐢" },
+    { word: "abeja", syl: ["a", "be", "ja"], emoji: "🐝" },
+    { word: "naranja", syl: ["na", "ran", "ja"], emoji: "🍊" },
+    { word: "pescado", syl: ["pes", "ca", "do"], emoji: "🐟" },
+    { word: "ardilla", syl: ["ar", "di", "lla"], emoji: "🐿️" },
+    { word: "mariposa", syl: ["ma", "ri", "po", "sa"], emoji: "🦋" },
+    { word: "guitarra", syl: ["gui", "ta", "rra"], emoji: "🎸" },
+    { word: "elefante", syl: ["e", "le", "fan", "te"], emoji: "🐘" },
+    { word: "jirafa", syl: ["ji", "ra", "fa"], emoji: "🦒" },
+    { word: "estrella", syl: ["es", "tre", "lla"], emoji: "⭐" },
+    { word: "corazón", syl: ["co", "ra", "zón"], emoji: "❤️" },
+    { word: "montaña", syl: ["mon", "ta", "ña"], emoji: "⛰️" },
+    { word: "bicicleta", syl: ["bi", "ci", "cle", "ta"], emoji: "🚲" },
+    { word: "ventana", syl: ["ven", "ta", "na"], emoji: "🪟" },
+    { word: "escuela", syl: ["es", "cue", "la"], emoji: "🏫" },
+    { word: "caracol", syl: ["ca", "ra", "col"], emoji: "🐌" },
+    { word: "violín", syl: ["vio", "lín"], emoji: "🎻" }
+  ];
+
+  const SYL_POOL = Array.from(new Set(WORDS.flatMap(w => w.syl)));
+
+  const emojiEl = document.getElementById('emoji');
+  const wordBoxEl = document.getElementById('word-box');
+  const optionsEl = document.getElementById('options');
+  const toastEl = document.getElementById('toast');
+  const scoreEl = document.getElementById('score');
+
+  const TOAST_MESSAGES = ["¡Muy bien! 🎉", "¡Correcto! 👏", "¡Excelente! 🌟", "¡Genial! 😄"];
+
+  let currentWord = null;
+  let missingIndex = 0;
+  let correctSyllable = '';
+  let prevWordIndex = -1;
+  let score = 0;
+  let lock = false;
+  let soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function speak(text) {
+    if (!soundEnabled) return;
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'es-MX';
+    utter.rate = 0.85;
+    window.speechSynthesis.speak(utter);
+  }
+
+  let audioCtx = null;
+  function playTone(freq, duration, type) {
+    try {
+      if (!soundEnabled) return;
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+  }
+  function playSuccessSound() {
+    playTone(700, 0.12, 'sine');
+    setTimeout(() => playTone(950, 0.18, 'sine'), 120);
+  }
+  function playErrorSound() {
+    playTone(220, 0.2, 'sawtooth');
+  }
+
+  function pickWord() {
+    let idx;
+    do {
+      idx = Math.floor(Math.random() * WORDS.length);
+    } while (idx === prevWordIndex && WORDS.length > 1);
+    prevWordIndex = idx;
+    return WORDS[idx];
+  }
+
+  function renderWord() {
+    emojiEl.textContent = currentWord.emoji;
+    wordBoxEl.innerHTML = '';
+    currentWord.syl.forEach((syl, i) => {
+      const box = document.createElement('div');
+      box.className = 'syl-box' + (i === missingIndex ? ' blank' : '');
+      box.textContent = i === missingIndex ? '' : syl;
+      wordBoxEl.appendChild(box);
+    });
+  }
+
+  function renderOptions() {
+    const distractors = shuffle(SYL_POOL.filter(s => s !== correctSyllable)).slice(0, 4);
+    const options = shuffle([correctSyllable, ...distractors]);
+    optionsEl.innerHTML = '';
+    options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.textContent = opt;
+      btn.addEventListener('click', () => onOptionClick(opt, btn));
+      optionsEl.appendChild(btn);
+    });
+  }
+
+  function fillBlank() {
+    const blankBox = wordBoxEl.children[missingIndex];
+    blankBox.textContent = correctSyllable;
+    blankBox.classList.remove('blank');
+    blankBox.classList.add('filled');
+  }
+
+  function showToast() {
+    toastEl.textContent = TOAST_MESSAGES[Math.floor(Math.random() * TOAST_MESSAGES.length)];
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 1300);
+  }
+
+  function updateScore() {
+    scoreEl.textContent = `⭐ ${score}`;
+  }
+
+  function onOptionClick(opt, btn) {
+    if (lock) return;
+    if (opt === correctSyllable) {
+      lock = true;
+      btn.classList.add('correct');
+      fillBlank();
+      playSuccessSound();
+      speak(currentWord.word);
+      showToast();
+      score++;
+      updateScore();
+      Array.from(optionsEl.children).forEach(b => { if (b !== btn) b.disabled = true; });
+      setTimeout(newRound, 1600);
+    } else {
+      btn.classList.add('wrong');
+      btn.disabled = true;
+      playErrorSound();
+      setTimeout(() => btn.classList.remove('wrong'), 400);
+    }
+  }
+
+  function newRound() {
+    lock = false;
+    currentWord = pickWord();
+    missingIndex = Math.floor(Math.random() * currentWord.syl.length);
+    correctSyllable = currentWord.syl[missingIndex];
+    renderWord();
+    renderOptions();
+    speak(currentWord.word);
+  }
+
+  function updateSoundButton() {
+    const btn = document.getElementById('sound-toggle');
+    btn.textContent = soundEnabled ? '🔊' : '🔇';
+    btn.classList.toggle('muted', !soundEnabled);
+  }
+
+  function toggleSound() {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('soundEnabled', soundEnabled ? 'true' : 'false');
+    if (!soundEnabled) window.speechSynthesis.cancel();
+    updateSoundButton();
+  }
+
+  document.getElementById('new-game').addEventListener('click', newRound);
+  document.getElementById('sound-toggle').addEventListener('click', toggleSound);
+  document.getElementById('replay-btn').addEventListener('click', () => speak(currentWord.word));
+  updateSoundButton();
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  }
+
+  newRound();
+</script>
+
+</body>
+</html>
